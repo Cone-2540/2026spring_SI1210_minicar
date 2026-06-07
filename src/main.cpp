@@ -46,6 +46,10 @@ bool motorRunning = false;
 bool pendingStart = false;
 unsigned long startTimestamp = 0;
 
+// PD 控制状态
+float lastError = 0.0f;
+unsigned long lastTime = 0;
+
 // ============================================================
 // 前向声明
 // ============================================================
@@ -253,47 +257,113 @@ void modeTrack() {
     float error = computeLineError();
     float absError = fabs(error);
 
-    // 3. P 控制 → 连续舵机角度
-    float targetAngle = SERVO_CENTER + KP_GAIN * error;
+    // 3. 丢线检测（DEADBAND）
+    bool anyBlack = false;
+    for (int i = 0; i < SENSOR_NUM; i++) {
+        if (whiteBaseline[i] - (float)sensorValues[i] > DEADBAND) {
+            anyBlack = true;
+            break;
+        }
+    }
 
-    // 4. 限幅
+    // 4. 独立状态机 latch（3态：MIDDLE/LEFT/RIGHT）
+    enum Latch { MIDDLE, LEFT, RIGHT };
+    static Latch latch = MIDDLE;
+    static unsigned long lostSince = 0;
+
+    // 用独立的 LATCH_THRESHOLD 判断各传感器是否在黑线上
+    float d[SENSOR_NUM];
+    for (int i = 0; i < SENSOR_NUM; i++) {
+        d[i] = whiteBaseline[i] - (float)sensorValues[i];
+    }
+    bool M_black = (d[2] > LATCH_THRESHOLD);                           // M
+    bool L_black = (d[0] > LATCH_THRESHOLD || d[1] > LATCH_THRESHOLD); // L2 或 L1
+    bool R_black = (d[3] > LATCH_THRESHOLD || d[4] > LATCH_THRESHOLD); // R1 或 R2
+
+    // 状态转换
+    if (M_black)
+        latch = MIDDLE;
+    else if (L_black)
+        latch = LEFT;
+    else if (R_black)
+        latch = RIGHT;
+    // 全白 = 保持当前 latch 不变
+
+    // 丢线计时
+    if (!anyBlack) {
+        if (lostSince == 0) lostSince = millis();
+    } else {
+        lostSince = 0;
+    }
+
+    // 5. PD 控制 → 连续舵机角度
+    float pTerm = KP_GAIN * error;
+
+    // D 项（抑制震荡）
+    static float prevError = 0.0f;
+    static bool firstFrame = true;
+    float dTerm = 0.0f;
+    if (!firstFrame) {
+        dTerm = KD_GAIN * (error - prevError);
+    }
+    prevError = error;
+    firstFrame = false;
+
+    float targetAngle = SERVO_CENTER + pTerm + dTerm;
+
+    // 6. 限幅
     targetAngle = constrain(targetAngle, SERVO_MIN, SERVO_MAX);
 
-    // 5. 转弯差速（左右轮速比跟随误差方向）
+    // 7. 丢线保持（latch 接管，只有全白且 latch 不在 MIDDLE 时触发）
+    if (!anyBlack && latch != MIDDLE) {
+        unsigned long elapsed = millis() - lostSince;
+        if (elapsed < HOLD_TIMEOUT_MS) {
+            targetAngle = (latch == LEFT) ? HOLD_ANGLE_LEFT : HOLD_ANGLE_RIGHT;
+        } else {
+            latch = MIDDLE; // 超时解除
+        }
+    }
+
+    // 8. 渐变差速（误差小时差速温和，避免出弯直道上反复推车）
     uint8_t baseSpeed = SPEED_BASE;
     uint8_t leftSp, rightSp;
 
-    if (absError < 0.15f) {
-        // 直行：等速
-        leftSp = baseSpeed;
-        rightSp = baseSpeed;
-    } else if (error > 0) {
-        // 左转（error>0 = 线偏左）：左轮内侧减速，右轮外侧加速
-        leftSp = (uint8_t)(baseSpeed * RATIO_IN);
-        rightSp = (uint8_t)(baseSpeed * RATIO_OUT);
+    // 差速强度：0 = 等速，1 = 满差速
+    float ramp = constrain(absError / DIFF_RAMP, 0.0f, 1.0f);
+
+    if (targetAngle > SERVO_CENTER) {
+        // 左转：从等速(1:1) 渐变到 温和差速(RATIO_IN_LEFT : RATIO_OUT_LEFT)
+        float lr = 1.0f + (RATIO_IN_LEFT - 1.0f) * ramp;  // 内侧：1.0 → 0.70
+        float rr = 1.0f + (RATIO_OUT_LEFT - 1.0f) * ramp; // 外侧：1.0 → 1.30
+        leftSp = (uint8_t)(baseSpeed * lr);
+        rightSp = (uint8_t)(baseSpeed * rr);
     } else {
-        // 右转（error<0 = 线偏右）：左轮外侧加速，右轮内侧减速
-        leftSp = (uint8_t)(baseSpeed * RATIO_OUT);
-        rightSp = (uint8_t)(baseSpeed * RATIO_IN);
+        // 右转：从等速(1:1) 渐变到 激进差速(RATIO_OUT_RIGHT : RATIO_IN_RIGHT)
+        float lr = 1.0f + (RATIO_OUT_RIGHT - 1.0f) * ramp; // 外侧：1.0 → 2.00
+        float rr = 1.0f + (RATIO_IN_RIGHT - 1.0f) * ramp;  // 内侧：1.0 → 0.40
+        leftSp = (uint8_t)(baseSpeed * lr);
+        rightSp = (uint8_t)(baseSpeed * rr);
     }
 
-    // 6. 动态降速（偏离越大整体越慢）
+    // 8. 动态降速（线性：误差从 SLOW_THRESHOLD_L1 到 L2 → 速度从 1.0 到 SLOW_RATIO_L2）
     float slowRatio = 1.0f;
-    if (absError > SLOW_THRESHOLD_L2) {
+    if (absError >= SLOW_THRESHOLD_L2) {
         slowRatio = SLOW_RATIO_L2;
     } else if (absError > SLOW_THRESHOLD_L1) {
-        slowRatio = SLOW_RATIO_L1;
+        float t =
+            (absError - SLOW_THRESHOLD_L1) / (SLOW_THRESHOLD_L2 - SLOW_THRESHOLD_L1);
+        slowRatio = 1.0f + (SLOW_RATIO_L2 - 1.0f) * t;
     }
     leftSp = (uint8_t)(leftSp * slowRatio);
     rightSp = (uint8_t)(rightSp * slowRatio);
 
-    // 7. 限幅 & 执行
+    // 9. 限幅 & 执行
     leftSp = constrain(leftSp, 0, MOTOR_PWM_MAX);
     rightSp = constrain(rightSp, 0, MOTOR_PWM_MAX);
     steeringServo.write((int)targetAngle);
     setMotorSpeed(leftSp, rightSp);
 
-    // 8. 串口调试输出
+    // 10. 串口调试输出
     printSensors();
     Serial.print(" Err:");
     Serial.print(error, 2);
@@ -303,7 +373,9 @@ void modeTrack() {
     Serial.print(leftSp);
     Serial.print(" R:");
     Serial.print(rightSp);
-    Serial.print(" D:");
+    Serial.print(" d:");
+    Serial.print(dTerm, 1);
+    Serial.print(" S:");
     Serial.println(slowRatio, 2);
 
     delay(20);
@@ -314,7 +386,7 @@ void modeTrack() {
 // ============================================================
 float computeLineError() {
     float wSum = 0, wTotal = 0;
-    const int8_t pos[SENSOR_NUM] = {-2, -1, 0, 1, 2};
+    const int8_t pos[SENSOR_NUM] = {2, 1, 0, -1, -2};
     bool detected = false;
 
     for (int i = 0; i < SENSOR_NUM; i++) {
