@@ -1,0 +1,1 @@
+如编译不成功，请将Adafruit_PWMServoDriver和Adafruit_PWMServoDriver 两个函数文件复制到Arduino_ide安装目录下的libraries函数库文件夹中，再重新打开源码编译即可。

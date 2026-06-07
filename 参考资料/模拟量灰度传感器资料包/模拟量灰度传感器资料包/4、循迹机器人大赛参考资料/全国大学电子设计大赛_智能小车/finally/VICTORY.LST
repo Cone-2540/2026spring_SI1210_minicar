@@ -1,0 +1,1298 @@
+                                                                    页     1
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            ORG     0000H
+0000 02010C LJMP    MAIN
+            
+            ORG     0003H
+0003 020030 LJMP    MINE_BOMB
+            
+            ORG     000BH
+000B 020049 LJMP    TIMER
+            
+            ORG     0013H
+0013 0200A6 LJMP    HUOER
+            
+            ORG     001BH
+001B 0200D8 LJMP    SPEED
+            
+            ;**************************************************
+            ORG     0030H
+            ;**************************************************
+            MINE_BOMB:
+0030 C0E0           PUSH    A
+0032 C0D0           PUSH    PSW
+            
+0034 053A           INC     3AH
+            
+0036 E540           MOV     A,40H
+0038 F53B           MOV     3BH,A
+            
+003A E541           MOV     A,41H
+003C F53C           MOV     3CH,A
+            
+003E C203           CLR    20H.3
+0040 D2B4           SETB   P3.4
+0042 D2B5           SETB   P3.5
+            
+0044 D0D0           POP     PSW
+0046 D0E0           POP     A
+0048 32     RETI
+            
+            ;**************************************************
+            TIMER:
+0049 C0E0           PUSH    A
+004B C0D0           PUSH    PSW
+            
+004D 758AF0         MOV       TL0,#0F0H
+0050 758CD8         MOV       TH0,#0D8H
+            
+0053 0537           INC       37H
+0055 E537           MOV       A,37H
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     2
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            
+0057 B46447         CJNE      A,#100,TIMEREND
+            ;is 1second
+            
+            IS_HUN:
+005A 753700         MOV       37H,#0
+                    ;            IS C_MINE,STOP AND THAN  XUAN
+005D 20000C         JB       20H.0,QI_LAI        ;THIS TIME,THE CAR IS WAITTING IN THE END,
+0060 1539           DEC      39H
+0062 E539           MOV      A,39H
+0064 B4003A         CJNE     A,#0H,TIMEREND
+0067 D200           SETB     20H.0
+0069 0200A1         LJMP     TIMEREND
+            
+            QI_LAI:
+006C 200112         JB       20H.1,WAKE_UP
+006F 1538           DEC      38H
+0071 B2B4           CPL      P3.4
+0073 E538           MOV      A,38H
+0075 B40009         CJNE     A,#0H,WAKE_UP
+0078 D201           SETB     20H.1
+007A C2B4           CLR      P3.4
+007C D28E           SETB     TR1
+007E 755A17         MOV      5AH,#23
+            
+            WAKE_UP:
+0081 0543           INC       43H
+0083 E543           MOV       A,43H
+0085 B41E07         CJNE      A,#30,GOGOGO_DOWN
+0088 E542           MOV       A,42H
+008A 6003           JZ        GOGOGO_DOWN
+008C 020311         LJMP      HOME
+            GOGOGO_DOWN:
+008F E543           MOV       A,43H
+0091 B43C0D         CJNE      A,#60,TIMEREND
+0094 754300         MOV       43H,#0
+            
+0097 0542           INC       42H
+0099 E542           MOV       A,42H
+009B B43C03         CJNE      A,#60,TIMEREND
+009E 754200         MOV       42H,#0
+            
+            
+            TIMEREND:
+00A1 D0D0           POP     PSW
+00A3 D0E0           POP     A
+            
+00A5 32     RETI
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     3
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            
+            ;**************************************************
+            HUOER:
+00A6 C0E0           PUSH    A
+00A8 C0D0           PUSH    PSW
+            
+00AA E53F           MOV     A,3FH
+00AC C3             CLR     C
+00AD 2440           ADD     A,#64    ;加上6.3毫米
+00AF B46400         CJNE    A,#100,CHECK_CM
+            CHECK_CM:
+00B2 4006           JC      ADD_CM
+00B4 9464           SUBB    A,#100    ;大于10个毫米了，要作调整
+00B6 F53F           MOV     3FH,A
+00B8 0541           INC     41H
+            
+            ADD_CM:                   ;厘米上要加2
+00BA 0541           INC     41H
+00BC 0541           INC     41H
+            
+00BE E541           MOV     A,41H
+00C0 B46400         CJNE    A,#100,CHECK_M
+            CHECK_M:
+00C3 400E           JC      HUOER_END
+00C5 9464           SUBB    A,#100    ;大于一米了，要调整一下
+00C7 F541           MOV     41H,A
+00C9 0540           INC     40H
+            
+                    ;查看是否是两米了，是的话就算到了B区
+00CB E540           MOV     A,40H
+00CD B40203         CJNE    A,#2,HUOER_END
+00D0 75360B         MOV     36H,#0BH
+            
+            HUOER_END:
+00D3 D0D0           POP     PSW
+00D5 D0E0           POP     A
+00D7 32     RETI
+            
+            ;**************************************************
+            SPEED:
+00D8 C0E0           PUSH    A
+00DA C0D0           PUSH    PSW
+            
+00DC 758BB0         MOV       TL1,#0B0H
+00DF 758D3C         MOV       TH1,#03CH
+            
+00E2 055B           INC       5BH
+00E4 E55B           MOV       A,5BH
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     4
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            
+00E6 B55A05         CJNE      A,5AH,SPEED_NO_EQUAL   ; 5A中放了速度值，比5A大，刚置为停，小则行
+00E9 C2B0           CLR       P3.0                   ; 等于5A了，置为停
+00EB 020107         LJMP      SP_END
+            
+            SPEED_NO_EQUAL:                          ; 不是5A
+            
+00EE 400B           JC       IS_GOGOGO               ; 小于5A，则向前走
+00F0 B4280D         CJNE     A,#40,SP_BIG_TOTAL      ; 是不是比总脉冲值大
+00F3 D2B0           SETB     P3.0
+00F5 755B00         MOV      5BH,#0H
+00F8 020107         LJMP     SP_END
+            IS_GOGOGO:                               ;是行，就置行
+00FB D2B0           SETB     P3.0
+00FD 020107         LJMP     SP_END
+            
+            SP_BIG_TOTAL:                            ; 大于5A，不是40
+0100 C2B0           CLR      P3.0
+0102 4003           JC       SP_END                  ;比40小则是停，就不管
+0104 755A00         MOV      5AH,#0H
+            SP_END:
+            
+0107 D0D0           POP     PSW
+0109 D0E0           POP     A
+010B 32     RETI
+            
+            ;**************************************************
+            ;**************************************************
+            
+            
+            MAIN:
+010C 75815F         MOV     SP,#5FH
+010F 120126         LCALL   INIT
+                ;   LJMP    HOME;\\\\\\\\\
+            
+            SIX_SECOND:
+0112 20000B         JB      20H.0,GO_MINE_ZEON
+0115 7939           MOV     R1,#39H
+0117 12016E         LCALL   SETCODEALL
+011A 12036F         LCALL   OUT
+011D 020112         LJMP    SIX_SECOND
+            
+            GO_MINE_ZEON:
+0120 D28E           SETB     TR1
+0122 02017C         LJMP     MINE_WAY
+0125 22     RET
+            
+            ;**************************************************
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     5
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            ;**************************************************
+            
+            INIT:
+0126 7936        MOV        R1,#36H
+0128 7A22        MOV        R2,#34
+            INIT_LOOP:
+012A 7700        MOV        @R1,#0
+012C 09          INC        R1
+012D DAFB        DJNZ       R2,INIT_LOOP
+            
+012F 752000      MOV        20H,#0H
+0132 D201        SETB       20H.1
+0134 D203        SETB       20H.3
+            
+            
+0136 753906      MOV        39H,#6H      ;倒计时654321
+0139 753805      MOV        38H,#5H      ;倒计时54321
+013C 755A18      MOV        5AH,#24      ;用于车速控制
+            
+013F 75360A      MOV        36H,#0AH
+            
+0142 75B00C      MOV        P3,#0CH
+0145 75A000      MOV        P2,#0H
+            
+            
+            INT_ZONE:
+0148 12014C      LCALL      SET_INT
+            
+014B 22     RET
+            ;**************************************************
+            SET_INT:
+014C 758901      MOV       TMOD,#01H
+014F 758AF0      MOV       TL0,#0F0H
+0152 758CD8      MOV       TH0,#0D8H
+            
+0155 758BB0      MOV       TL1,#0B0H
+0158 758D3C      MOV       TH1,#03CH
+015B D28C        SETB      TR0
+015D C28E        CLR       TR1
+            
+015F D2AF        SETB      EA
+0161 D2A9        SETB      ET0
+0163 D2AB        SETB      ET1
+0165 D2A8        SETB      EX0
+0167 D288        SETB      IT0
+            
+0169 D2AA        SETB      EX1
+016B D28A        SETB      IT1
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     6
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            
+016D 22     RET
+            ;**************************************************
+            
+            SETCODEALL:;6543210
+016E 7830           MOV     R0,#30H
+0170 7A06           MOV     R2,#6
+            SETCODEALL_LOOP:
+0172 E7             MOV     A,@R1
+0173 9003B7         MOV     DPTR,#TAB
+0176 93             MOVC    A,@A+DPTR
+0177 F6             MOV     @R0,A
+0178 08             INC     R0
+0179 DAF7           DJNZ    R2,SETCODEALL_LOOP
+017B 22     RET
+            
+            ;**************************************************
+            ;**************************************************
+            
+            MINE_WAY:
+017C 1201AA         LCALL TRACK
+            
+017F 2003FA         JB    20H.3,MINE_WAY
+0182 A2B2           MOV     C,P3.2           ;下面有雷，就是低
+0184 40F6           JC    MINE_WAY
+            
+                    ;下面是关小灯和蜂鸣器
+0186 C2B4           CLR     P3.4
+0188 C2B5           CLR     P3.5
+            
+                    ;看看长度是否超过4米
+018A E540           MOV     A,40H
+018C B40403         CJNE    A,#4H,PASS_C
+018F 02019A         LJMP    C_POINT
+            
+            PASS_C:
+0192 5006           JNC     C_POINT
+            
+                    ;下面调用一般雷的处理方法，再返回主程序
+0194 1201E7         LCALL   NORMAL_MINE
+0197 02017C         LJMP    MINE_WAY
+            
+                    ;下面是到达C点了
+            C_POINT:
+019A C201           CLR     20H.1
+019C 120267         LCALL   FIVE_SECOND
+019F D203           SETB    20H.3
+01A1 D28E           SETB    TR1
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     7
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+01A3 755A17         MOV     5AH,#23
+01A6 02028F         LJMP    BOLK
+            
+01A9 22     RET
+            
+            ;****************************************************
+            
+            TRACK:
+01AA E580         MOV       A,P0
+01AC 5407         ANL       A,#07H
+01AE B40703       CJNE      A,#7H,SET_TURN
+01B1 0201CE       LJMP      LIGHT_END
+            SET_TURN:
+01B4 B4030A       CJNE      A,#3H,LIGHT_NEXT
+            RIGHT_LIGHT:         ;  看右边的光敏元件
+01B7 C2A7         CLR       P2.7        ;这时就要向右转弯了
+01B9 D2A6         SETB      P2.6
+01BB 1201D1       LCALL     TURN_DELAY
+01BE C2A6         CLR       P2.6
+01C0 22           RET
+            LIGHT_NEXT:          ; 左转了
+01C1 B4060A       CJNE      A,#06H,LIGHT_END
+01C4 D2A7         SETB      P2.7
+01C6 D2A6         SETB      P2.6
+01C8 1201D1       LCALL     TURN_DELAY
+01CB C2A6         CLR       P2.6
+01CD 22           RET
+            
+            LIGHT_END:
+01CE C2A6         CLR   P2.6
+01D0 22     RET
+            ;****************************************************
+            
+            TURN_DELAY:
+01D1 755A1A       MOV        5AH,#26
+01D4 A281         MOV        C, P0.1
+01D6 40F9         JC         TURN_DELAY
+            
+01D8 E536         MOV        A,36H
+                  
+01DA B40A06       CJNE       A,#0AH,IS_ZONE_B
+01DD 755A18       MOV        5AH,#24
+01E0 0201E6       LJMP       TURN_DELAY_END
+            
+            IS_ZONE_B:
+01E3 755A14       MOV        5AH,#20
+            TURN_DELAY_END:
+            
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     8
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+01E6 22     RET
+            
+            ;****************************************************
+            
+            NORMAL_MINE:
+01E7 C28E         CLR        TR1
+01E9 C2A6         CLR        P2.6
+            
+                  ;以下是保存雷长度
+01EB E53C         MOV       A,3CH
+01ED 2453         ADD       A,#53H
+01EF F8           MOV       R0,A
+            
+01F0 C3           CLR       C
+01F1 E541         MOV       A,41H
+01F3 2464         ADD       A,#100
+01F5 953C         SUBB      A,3CH
+01F7 B46400       CJNE      A,#100,NORMAL_MINE_LENGTH
+            NORMAL_MINE_LENGTH:
+01FA 4002         JC        NO_CHANGE
+01FC 9464         SUBB      A,#100
+            NO_CHANGE:
+01FE F6           MOV       @R0,A
+            
+            
+                  ;以下是计算中点距起点的距离
+01FF 75F002       MOV       B,#2H
+0202 84           DIV       AB
+            
+0203 253C         ADD       A,3CH
+0205 B46400       CJNE      A,#100,SET_CENTER
+            SET_CENTER:
+0208 4004         JC        NO_P_WAY
+020A 9464         SUBB      A,#100
+020C 053B         INC       3BH
+            NO_P_WAY:
+020E F53C         MOV       3CH,A
+            
+                  ;保存中点距离
+0210 E53A         MOV       A,3AH
+0212 14           DEC       A
+0213 75F002       MOV       B,#2H
+0216 A4           MUL       AB
+            
+0217 A848         MOV       R0,48H
+0219 28           ADD       A,R0
+            
+021A F8           MOV       R0,A
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页     9
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+021B E53B         MOV       A,3BH
+021D F6           MOV       @R0,A
+            
+021E 08           INC       R0
+021F E53C         MOV       A,3CH
+0221 F6           MOV       @R0,A
+            
+            
+            
+0222 C2B0         CLR        P3.0
+0224 C2B1         CLR        P3.1
+0226 C2A6         CLR        P2.6
+            
+0228 C28E         CLR        TR1
+            
+                  ;以下是延时显示程序
+022A 12023E       LCALL      DELAY_MINE2
+022D C2B1         CLR        P3.1
+022F D2B0         SETB       P3.0
+0231 D28E         SETB       TR1
+0233 D203         SETB       20H.3
+            
+0235 22     RET
+            
+            ;****************************************************
+            DELAY_MINE1:
+0236 7E02         MOV       R6,#2H
+            DELAY_LOOP_MINE1:
+0238 12030C       LCALL      DELAY
+023B DEFB         DJNZ       R6,DELAY_LOOP_MINE1
+023D 22     RET
+            
+            ;****************************************************
+            ;****************************************************
+            DELAY_MINE2:
+023E 12024D       LCALL     SET_CODE_MINE
+0241 7D03         MOV       R5,#03H
+            DELAY_LOOP_MINE_F:
+0243 7E8F         MOV       R6,#08FH
+                  DELAY_LOOP_MINE2:
+0245 12036F            LCALL      OUT
+0248 DEFB              DJNZ       R6,DELAY_LOOP_MINE2
+024A DDF7         DJNZ     R5,DELAY_LOOP_MINE_F
+024C 22     RET
+            
+            ;****************************************************
+            
+            SET_CODE_MINE:
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    10
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+024D E53B         MOV     A,3BH
+024F 75F00A       MOV     B,#0AH
+0252 84           DIV     AB
+0253 F544         MOV     44H,A
+0255 85F045       MOV     45H,B
+            
+0258 E53C         MOV     A,3CH
+025A 75F00A       MOV     B,#0AH
+025D 84           DIV     AB
+025E F546         MOV     46H,A
+0260 85F047       MOV     47H,B
+            
+0263 12039B       LCALL   SET_CODE
+0266 22     RET
+            
+            
+            ;****************************************************
+            
+            FIVE_SECOND:
+0267 C28E            CLR        TR1
+0269 C2A6            CLR        P2.6
+026B D2B1            SETB       P3.1
+026D D2B0            SETB       P3.0
+026F 120236          LCALL      DELAY_MINE1
+0272 C2B0            CLR        P3.0
+0274 C2B1            CLR        P3.1
+0276 C2A6            CLR        P2.6
+            
+0278 D2B5            SETB       P3.5
+027A D2B4            SETB       P3.4
+027C C28E            CLR        TR1
+            
+            STOP_AT_C:
+027E 7938           MOV     R1,#38H
+0280 12016E         LCALL   SETCODEALL
+0283 200106         JB      20H.1,C_WAKE_LE
+0286 12036F         LCALL   OUT
+0289 02027E         LJMP    STOP_AT_C
+            
+            C_WAKE_LE:
+028C D28E           SETB    TR1
+            
+028E 22     RET
+            
+            ;****************************************************
+            ;****************************************************
+            
+            BOLK:
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    11
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+028F D28E           SETB    TR1
+0291 755A14         MOV     5AH,#20
+                    
+            
+0294 7D05           MOV     R5,#05H
+            FIRST_TURN_RIGHT1:
+0296 7EFF           MOV      R6,#0FFH
+            FIRST_TURN_RIGHT2:
+0298 12030C         LCALL     DELAY        
+029B DEFB           DJNZ      R6,FIRST_TURN_RIGHT2        
+029D DDF7           DJNZ      R5,FIRST_TURN_RIGHT1
+                            
+                    
+            
+            SEEK_LAMP:
+029F 1202BA         LCALL   TURN_TO_LAMP
+02A2 A281           MOV     C,P0.1
+02A4 506B           JNC     HOME
+02A6 2006F6         JB      20H.6,SEEK_LAMP
+            
+02A9 A286           MOV     C,P0.6
+02AB 40F2           JC      SEEK_LAMP
+02AD 1202D2 AV:     LCALL   AVOID_WHITE_BOLK
+02B0 A286           MOV     C,P0.6
+02B2 50F9           JNC     AV
+02B4 D206           SETB    20H.6
+            
+02B6 02029F         LJMP    SEEK_LAMP
+            
+02B9 22     RET
+            
+            ;******************************************************
+            
+            TURN_TO_LAMP:
+02BA A283           MOV  C,P0.3
+02BC 5004           JNC  LOOK_RIGHT
+02BE 1202FB         LCALL  TURN_LEFT_MIDDLE
+02C1 22             RET
+            LOOK_RIGHT:
+02C2 A285           MOV     C,P0.5
+02C4 7E4F           MOV     R6,#4FH
+            FORWARDLIGHT:
+02C6 12030C         LCALL   DELAY
+02C9 DEFB           DJNZ    R6,FORWARDLIGHT
+02CB 5004           JNC     TURN_TO_LAMP_END
+02CD 1202EA         LCALL   TURN_RIGHT_MIDDLE
+02D0 22             RET
+            
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    12
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            TURN_TO_LAMP_END:
+02D1 22     RET
+            
+            ;******************************************************
+            
+            ;******************************************************
+            AVOID_WHITE_BOLK:
+02D2 D2A7            SETB    P2.7
+02D4 D2A6            SETB    P2.6
+02D6 755A1E          MOV     5AH,#30
+02D9 7E3F            MOV    R6,#3FH
+            AVOID_LOOP:
+02DB 12030C          LCALL  DELAY
+02DE DEFB            DJNZ   R6,AVOID_LOOP
+            
+02E0 A286            MOV     C,P0.6
+02E2 50EE            JNC     AVOID_WHITE_BOLK
+02E4 755A17          MOV     5AH,#23
+02E7 C2A6            CLR     P2.6
+02E9 22     RET
+            ;******************************************************
+            
+            TURN_RIGHT_MIDDLE:
+02EA 755A1E          MOV      5AH,#30
+            TURN_RIGHT_MIDDLE_START:
+02ED C2A7            CLR    P2.7
+02EF D2A6            SETB   P2.6
+02F1 A283            MOV    C,P0.3
+02F3 50F8            JNC    TURN_RIGHT_MIDDLE_START
+02F5 C2A6            CLR    P2.6
+02F7 755A17          MOV    5AH,#23
+02FA 22     RET
+            
+            ;******************************************************
+            
+            TURN_LEFT_MIDDLE:
+02FB 755A1E           MOV    5AH,#30
+            TURN_LEFT_MIDDLE_START:
+02FE D2A7            SETB   P2.7
+0300 D2A6            SETB   P2.6
+0302 A285             MOV    C,P0.5
+0304 50E7            JNC    TURN_RIGHT_MIDDLE_START
+0306 C2A6            CLR    P2.6
+0308 755A23          MOV    5AH,#23H
+030B 22     RET
+            
+            ;******************************************************
+            
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    13
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            DELAY:
+030C 7FFF           MOV     R7,#0FFH
+            DELAY_LOOP:
+030E DFFE           DJNZ    R7,DELAY_LOOP
+0310 22     RET
+            
+            ;******************************************************
+            
+            
+            
+            ;****************************************************
+            
+            HOME:
+0311 75A800         MOV     IE,#0H
+0314 75A800         MOV     IE,#0H
+            
+0317 C2A6           CLR     P2.6
+0319 C2B0           CLR     P3.0
+            
+            HOME_WAIT:
+031B C2A6           CLR     P2.6
+031D C2B0           CLR     P3.0
+031F D2B4           SETB    P3.4
+0321 120333         LCALL   KEY_QUERY     ; 查询键盘
+0324 120347         LCALL   TIP_SET_CODE  ; 设置显示值
+0327 7944            MOV     R1,#44H
+0329 12039B          LCALL   SET_CODE
+032C 12036F         LCALL   OUT           ; LED 输出
+032F 02031B         LJMP    HOME_WAIT
+0332 22     RET
+            
+            ;******************************************************
+            
+            KEY_QUERY:
+0333 1203C7         LCALL   KEY
+0336 500D           JNC    KEY_QUERY_END
+0338 1203C7         LCALL   KEY
+033B 5008           JNC      KEY_QUERY_END
+033D 1203E1         LCALL   DEAL_KEY
+            KEY_WA:
+0340 1203C7         LCALL   KEY
+0343 40FB           JC      KEY_WA
+            KEY_QUERY_END:
+0345 22     RET
+            
+            
+0346 22     RET
+            
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    14
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            ;******************************************************
+            
+            TIP_SET_CODE:
+            
+0347 E559           MOV  A,59H
+0349 601E           JZ   SET_TIME
+            
+034B 7846           MOV     R0,#46H
+034D 75F002         MOV     B,#02H
+0350 A4             MUL     AB
+            
+0351 28             ADD     A,R0
+0352 F8             MOV     R0,A
+            SET_NUM:
+0353 E6             MOV     A,@R0
+0354 75F00A         MOV     B,#0AH
+0357 84             DIV     AB
+0358 F544           MOV     44H,A
+035A 85F045         MOV     45H,B
+            
+035D 08             INC     R0
+035E 75F00A         MOV     B,#0AH
+0361 E6             MOV     A,@R0
+0362 84             DIV     AB
+0363 F546           MOV     46H,A
+0365 85F047         MOV     47H,B
+0368 22             RET
+            
+            SET_TIME:
+0369 7842           MOV     R0,#42H
+036B 020353         LJMP    SET_NUM
+            
+036E 22     RET
+            
+            ;*****************************************************
+            
+            OUT:
+036F 7830           MOV     R0,#30H
+0371 7A06           MOV     R2,#6H
+0373 7C00           MOV     R4,#0H
+            LOOP:
+0375 E6             MOV     A,@R0
+0376 12037E         LCALL   OUTPUT
+0379 08             INC     R0
+037A 0C             INC     R4
+037B DAF8           DJNZ    R2,LOOP
+037D 22     RET
+            
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    15
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            ;*******************************************************
+            
+            OUTPUT: ;在A中是要显示的数据，R4中是要显示的位
+037E 7B08           MOV     R3,#8H
+0380 C293           CLR     P1.3
+            
+            OUT_LOOP:
+0382 33             RLC     A
+0383 9292           MOV     P1.2,C
+0385 C294           CLR     P1.4
+0387 00             NOP
+0388 00             NOP
+0389 00             NOP
+038A D294           SETB    P1.4
+038C 00             NOP
+038D 00             NOP
+038E 00             NOP
+038F DBF1           DJNZ    R3,OUT_LOOP
+            OUT_LOOP_END:
+0391 8C90           MOV     P1,R4
+0393 D293           SETB    P1.3
+0395 12030C         LCALL   DELAY
+0398 C293           CLR     P1.3
+039A 22     RET
+            
+            ;******************************************************
+            
+            SET_CODE:
+039B 7844           MOV     R0,#44H
+039D 7930           MOV     R1,#30H
+039F 7A04           MOV     R2,#4H
+            SET_CODE_LOOP:
+03A1 E6             MOV     A,@R0
+03A2 9003B7         MOV     DPTR,#TAB
+03A5 93             MOVC    A,@A+DPTR
+03A6 F7             MOV     @R1,A
+03A7 08             INC     R0
+03A8 09             INC     R1
+03A9 DAF6           DJNZ    R2,SET_CODE_LOOP
+            
+                    ;以下是显示是第几个雷
+03AB E53A           MOV     A,3AH
+03AD 9003B7         MOV     DPTR,#TAB
+03B0 93             MOVC    A,@A+DPTR
+03B1 F535           MOV     35H,A
+                    ;以下是使一个LED为暗
+03B3 753400         MOV     34H,#0H
+03B6 22     RET
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    16
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            
+            ;******************************************************
+            
+03B7 3F065B 
+03BA 4F666D 
+03BD 7D077F 
+03C0 6F777C 
+03C3 395E79 
+03C6 71     TAB:   DB 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,6FH,77H,7CH,39H,5EH,79H,71H
+            
+            ;*****************************************************
+            KEY:
+03C7 7558FE         MOV     58H,#0FEH;
+03CA 7904           MOV     R1,#4H
+            KEY_LOOP:
+03CC 855890         MOV     P1,58H
+03CF E590           MOV     A,P1
+03D1 B5580B         CJNE    A,58H,KEY_NEXT1
+03D4 E558           MOV     A,58H ;NO KEY FIND
+03D6 23             RL      A
+03D7 F558           MOV     58H,A
+03D9 D9F1           DJNZ    R1,KEY_LOOP
+03DB C3             CLR    C
+03DC 0203E0         LJMP    KEY_END
+            
+            KEY_NEXT1:
+03DF D3             SETB    C
+            KEY_END:
+            
+03E0 22     RET
+            
+            
+            DEAL_KEY:
+03E1 E558            MOV    A,58H
+03E3 7590F0          MOV    P1,#0F0H
+03E6 B4FE1F          CJNE   A,#0FEH,TWO
+            
+03E9 D291   ONE_1:   SETB   P1.1
+03EB 00              NOP
+03EC A291            MOV    C,P1.1
+03EE 4006            JC    ONE_2
+03F0 75590E          MOV    59H,#0EH
+03F3 020468          LJMP   DEAL_END
+            
+03F6 D292   ONE_2:   SETB   P1.2
+03F8 A292            MOV    C,P1.2
+03FA 4006            JC    ONE_3
+03FC 755907          MOV    59H,#07H
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    17
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+03FF 020468          LJMP   DEAL_END
+0402 75590F ONE_3:   MOV    59H,#0FH
+0405 020468          LJMP   DEAL_END
+            
+0408 B4FD1E TWO:     CJNE   A,#0FDH,THREE
+040B D290   TWO_1:   SETB   P1.0
+040D A290            MOV    C,P1.0
+040F 4006            JC    TWO_2
+0411 755902          MOV    59H,#2H
+0414 020468          LJMP   DEAL_END
+            
+0417 D292   TWO_2:   SETB   P1.2
+0419 A292            MOV    C,P1.2
+041B 4006            JC    TWO_3
+041D 755906          MOV    59H,#6H
+0420 020468          LJMP   DEAL_END
+0423 755909 TWO_3:   MOV    59H,#9H
+0426 020468          LJMP   DEAL_END
+            
+            
+0429 B4FB1E THREE:   CJNE   A,#0FBH,FOUR
+            
+            
+042C D290   THREE_1: SETB   P1.0
+042E A290            MOV    C,P1.0
+0430 4006            JC    THREE_2
+0432 755901          MOV    59H,#1H
+0435 020468          LJMP   DEAL_END
+            
+0438 D291   THREE_2: SETB   P1.1
+043A A291            MOV    C,P1.1
+043C 4006            JC    THREE_3
+043E 755904          MOV    59H,#4H
+0441 020468          LJMP   DEAL_END
+0444 755908 THREE_3: MOV    59H,#8H
+0447 020468          LJMP   DEAL_END
+            
+            FOUR:
+044A D290   FOUR_1:  SETB   P1.0
+044C A290            MOV    C,P1.0
+044E 4006            JC    FOUR_2
+0450 755900          MOV    59H,#0H
+0453 020468          LJMP   DEAL_END
+            
+0456 D291   FOUR_2:  SETB   P1.1
+0458 A291            MOV    C,P1.1
+045A 4006            JC    FOUR_3
+045C 755903          MOV    59H,#3H
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    18
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+045F 020468          LJMP   DEAL_END
+0462 755905 FOUR_3:  MOV    59H,#5H
+0465 020468          LJMP   DEAL_END
+            
+            DEAL_END:
+            
+0468 22     RET
+            
+            
+                59H,#0FH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    19
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+
+
+            符号                       值     类型
+
+            AC                       = 00D6H CONST 常量 
+            ACC                      = 00E0H CONST 常量 
+            ADD_CM                   = 00BAH CODE  标号 
+            AV                       = 02ADH CODE  标号 
+            AVOID_LOOP               = 02DBH CODE  标号 
+            AVOID_WHITE_BOLK         = 02D2H CODE  标号 
+            B                        = 00F0H CONST 常量 
+            BOLK                     = 028FH CODE  标号 
+            CHECK_CM                 = 00B2H CODE  标号 
+            CHECK_M                  = 00C3H CODE  标号 
+            CY                       = 00D7H CONST 常量 
+            C_POINT                  = 019AH CODE  标号 
+            C_WAKE_LE                = 028CH CODE  标号 
+            DEAL_END                 = 0468H CODE  标号 
+            DEAL_KEY                 = 03E1H CODE  标号 
+            DELAY                    = 030CH CODE  标号 
+            DELAY_LOOP               = 030EH CODE  标号 
+            DELAY_LOOP_MINE1         = 0238H CODE  标号 
+            DELAY_LOOP_MINE2         = 0245H CODE  标号 
+            DELAY_LOOP_MINE_F        = 0243H CODE  标号 
+            DELAY_MINE1              = 0236H CODE  标号 
+            DELAY_MINE2              = 023EH CODE  标号 
+            DPH                      = 0083H CONST 常量 
+            DPL                      = 0082H CONST 常量 
+            EA                       = 00AFH CONST 常量 
+            ES                       = 00ACH CONST 常量 
+            ET0                      = 00A9H CONST 常量 
+            ET1                      = 00ABH CONST 常量 
+            ET2                      = 00ADH CONST 常量 
+            EX0                      = 00A8H CONST 常量 
+            EX1                      = 00AAH CONST 常量 
+            F0                       = 00D5H CONST 常量 
+            F1                       = 00D1H CONST 常量 
+            FIRST_TURN_RIGHT1        = 0296H CODE  标号 
+            FIRST_TURN_RIGHT2        = 0298H CODE  标号 
+            FIVE_SECOND              = 0267H CODE  标号 
+            FORWARDLIGHT             = 02C6H CODE  标号 
+            FOUR                     = 044AH CODE  标号 
+            FOUR_1                   = 044AH CODE  标号 
+            FOUR_2                   = 0456H CODE  标号 
+            FOUR_3                   = 0462H CODE  标号 
+            GOGOGO_DOWN              = 008FH CODE  标号 
+            GO_MINE_ZEON             = 0120H CODE  标号 
+            HOME                     = 0311H CODE  标号 
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    20
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            HOME_WAIT                = 031BH CODE  标号 
+            HUOER                    = 00A6H CODE  标号 
+            HUOER_END                = 00D3H CODE  标号 
+            IE                       = 00A8H CONST 常量 
+            IE0                      = 0089H CONST 常量 
+            IE1                      = 008BH CONST 常量 
+            INIT                     = 0126H CODE  标号 
+            INIT_LOOP                = 012AH CODE  标号 
+            INT_ZONE                 = 0148H CODE  标号 
+            IP                       = 00B8H CONST 常量 
+            IS_GOGOGO                = 00FBH CODE  标号 
+            IS_HUN                   = 005AH CODE  标号 
+            IS_ZONE_B                = 01E3H CODE  标号 
+            IT0                      = 0088H CONST 常量 
+            IT1                      = 008AH CONST 常量 
+            KEY                      = 03C7H CODE  标号 
+            KEY_END                  = 03E0H CODE  标号 
+            KEY_LOOP                 = 03CCH CODE  标号 
+            KEY_NEXT1                = 03DFH CODE  标号 
+            KEY_QUERY                = 0333H CODE  标号 
+            KEY_QUERY_END            = 0345H CODE  标号 
+            KEY_WA                   = 0340H CODE  标号 
+            LIGHT_END                = 01CEH CODE  标号 
+            LIGHT_NEXT               = 01C1H CODE  标号 
+            LOOK_RIGHT               = 02C2H CODE  标号 
+            LOOP                     = 0375H CODE  标号 
+            MAIN                     = 010CH CODE  标号 
+            MINE_BOMB                = 0030H CODE  标号 
+            MINE_WAY                 = 017CH CODE  标号 
+            NORMAL_MINE              = 01E7H CODE  标号 
+            NORMAL_MINE_LENGTH       = 01FAH CODE  标号 
+            NO_CHANGE                = 01FEH CODE  标号 
+            NO_P_WAY                 = 020EH CODE  标号 
+            ONE_1                    = 03E9H CODE  标号 
+            ONE_2                    = 03F6H CODE  标号 
+            ONE_3                    = 0402H CODE  标号 
+            OUT                      = 036FH CODE  标号 
+            OUTPUT                   = 037EH CODE  标号 
+            OUT_LOOP                 = 0382H CODE  标号 
+            OUT_LOOP_END             = 0391H CODE  标号 
+            OV                       = 00D2H CONST 常量 
+            P                        = 00D0H CONST 常量 
+            P0                       = 0080H CONST 常量 
+            P1                       = 0090H CONST 常量 
+            P2                       = 00A0H CONST 常量 
+            P3                       = 00B0H CONST 常量 
+            PASS_C                   = 0192H CODE  标号 
+            PCON                     = 0087H CONST 常量 
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    21
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            PS                       = 00BCH CONST 常量 
+            PSW                      = 00D0H CONST 常量 
+            PT0                      = 00B9H CONST 常量 
+            PT1                      = 00BBH CONST 常量 
+            PT2                      = 00BDH CONST 常量 
+            PX0                      = 00B8H CONST 常量 
+            PX1                      = 00BAH CONST 常量 
+            QI_LAI                   = 006CH CODE  标号 
+            RB8                      = 009AH CONST 常量 
+            RCAP2H                   = 00CBH CONST 常量 
+            RCAP2L                   = 00CAH CONST 常量 
+            REN                      = 009CH CONST 常量 
+            RI                       = 0098H CONST 常量 
+            RIGHT_LIGHT              = 01B7H CODE  标号 
+            RS0                      = 00D3H CONST 常量 
+            RS1                      = 00D4H CONST 常量 
+            SBUF                     = 0099H CONST 常量 
+            SCON                     = 0098H CONST 常量 
+            SEEK_LAMP                = 029FH CODE  标号 
+            SETCODEALL               = 016EH CODE  标号 
+            SETCODEALL_LOOP          = 0172H CODE  标号 
+            SET_CENTER               = 0208H CODE  标号 
+            SET_CODE                 = 039BH CODE  标号 
+            SET_CODE_LOOP            = 03A1H CODE  标号 
+            SET_CODE_MINE            = 024DH CODE  标号 
+            SET_INT                  = 014CH CODE  标号 
+            SET_NUM                  = 0353H CODE  标号 
+            SET_TIME                 = 0369H CODE  标号 
+            SET_TURN                 = 01B4H CODE  标号 
+            SIX_SECOND               = 0112H CODE  标号 
+            SM0                      = 009FH CONST 常量 
+            SM1                      = 009EH CONST 常量 
+            SM2                      = 009DH CONST 常量 
+            SP                       = 0081H CONST 常量 
+            SPEED                    = 00D8H CODE  标号 
+            SPEED_NO_EQUAL           = 00EEH CODE  标号 
+            SP_BIG_TOTAL             = 0100H CODE  标号 
+            SP_END                   = 0107H CODE  标号 
+            STOP_AT_C                = 027EH CODE  标号 
+            T2CON                    = 00C8H CONST 常量 
+            T2MOD                    = 00C9H CONST 常量 
+            TAB                      = 03B7H CODE  标号 
+            TB8                      = 009BH CONST 常量 
+            TCON                     = 0088H CONST 常量 
+            TF0                      = 008DH CONST 常量 
+            TF1                      = 008FH CONST 常量 
+            TH0                      = 008CH CONST 常量 
+            TH1                      = 008DH CONST 常量 
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
+                                                                    页    22
+                                                                    09-21-03
+                                                                    16:59:02
+伟福汇编器 V5.00                             Copyright (c) 1989, 2001 by CHY
+
+地址  机器码 源程序
+
+            TH2                      = 00CDH CONST 常量 
+            THREE                    = 0429H CODE  标号 
+            THREE_1                  = 042CH CODE  标号 
+            THREE_2                  = 0438H CODE  标号 
+            THREE_3                  = 0444H CODE  标号 
+            TI                       = 0099H CONST 常量 
+            TIMER                    = 0049H CODE  标号 
+            TIMEREND                 = 00A1H CODE  标号 
+            TIP_SET_CODE             = 0347H CODE  标号 
+            TL0                      = 008AH CONST 常量 
+            TL1                      = 008BH CONST 常量 
+            TL2                      = 00CCH CONST 常量 
+            TMOD                     = 0089H CONST 常量 
+            TR0                      = 008CH CONST 常量 
+            TR1                      = 008EH CONST 常量 
+            TRACK                    = 01AAH CODE  标号 
+            TURN_DELAY               = 01D1H CODE  标号 
+            TURN_DELAY_END           = 01E6H CODE  标号 
+            TURN_LEFT_MIDDLE         = 02FBH CODE  标号 
+            TURN_LEFT_MIDDLE_START   = 02FEH CODE  标号 
+            TURN_RIGHT_MIDDLE        = 02EAH CODE  标号 
+            TURN_RIGHT_MIDDLE_START  = 02EDH CODE  标号 
+            TURN_TO_LAMP             = 02BAH CODE  标号 
+            TURN_TO_LAMP_END         = 02D1H CODE  标号 
+            TWO                      = 0408H CODE  标号 
+            TWO_1                    = 040BH CODE  标号 
+            TWO_2                    = 0417H CODE  标号 
+            TWO_3                    = 0423H CODE  标号 
+            WAKE_UP                  = 0081H CODE  标号 
+
+
+            公有符号:  169
+            私有符号:    0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+D:\YC\SONY_CUP\FINALLY\VICTORY.ASM                              
+ 
