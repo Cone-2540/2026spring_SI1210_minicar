@@ -297,6 +297,8 @@ void modeTrack() {
     }
 
     // 5. PD 控制 → 连续舵机角度
+    // 误差死区：微小偏离视为直行，抑制出弯 S 形震荡
+    if (absError < ERROR_DEADBAND) error = 0.0f;
     float pTerm = KP_GAIN * error;
 
     // D 项（抑制震荡）
@@ -311,8 +313,12 @@ void modeTrack() {
 
     float targetAngle = SERVO_CENTER + pTerm + dTerm;
 
-    // 6. 限幅
+    // 6. 限幅 + 速率限制（抑制高速抖动，不影响弯道响应）
     targetAngle = constrain(targetAngle, SERVO_MIN, SERVO_MAX);
+    static float prevTargetAngle = SERVO_CENTER;
+    targetAngle = constrain(targetAngle, prevTargetAngle - ANGLE_RATE_LIMIT,
+                            prevTargetAngle + ANGLE_RATE_LIMIT);
+    prevTargetAngle = targetAngle;
 
     // 7. 丢线保持（latch 接管，只有全白且 latch 不在 MIDDLE 时触发）
     if (!anyBlack && latch != MIDDLE) {
@@ -324,23 +330,24 @@ void modeTrack() {
         }
     }
 
-    // 8. 渐变差速（误差小时差速温和，避免出弯直道上反复推车）
+    // 8. 渐变差速（跟随实际舵机角度，确保差速和转弯同步）
     uint8_t baseSpeed = SPEED_BASE;
     uint8_t leftSp, rightSp;
 
-    // 差速强度：0 = 等速，1 = 满差速
-    float ramp = constrain(absError / DIFF_RAMP, 0.0f, 1.0f);
+    // 差速强度：0°偏角=等速(1:1)，90°偏角=满差速
+    float deviation = fabs(targetAngle - SERVO_CENTER);
+    float ramp = constrain(deviation / 90.0f, 0.0f, 1.0f);
 
     if (targetAngle > SERVO_CENTER) {
         // 左转：从等速(1:1) 渐变到 温和差速(RATIO_IN_LEFT : RATIO_OUT_LEFT)
-        float lr = 1.0f + (RATIO_IN_LEFT - 1.0f) * ramp;  // 内侧：1.0 → 0.70
-        float rr = 1.0f + (RATIO_OUT_LEFT - 1.0f) * ramp; // 外侧：1.0 → 1.30
+        float lr = 1.0f + (RATIO_IN_LEFT - 1.0f) * ramp;
+        float rr = 1.0f + (RATIO_OUT_LEFT - 1.0f) * ramp;
         leftSp = (uint8_t)(baseSpeed * lr);
         rightSp = (uint8_t)(baseSpeed * rr);
     } else {
         // 右转：从等速(1:1) 渐变到 激进差速(RATIO_OUT_RIGHT : RATIO_IN_RIGHT)
-        float lr = 1.0f + (RATIO_OUT_RIGHT - 1.0f) * ramp; // 外侧：1.0 → 2.00
-        float rr = 1.0f + (RATIO_IN_RIGHT - 1.0f) * ramp;  // 内侧：1.0 → 0.40
+        float lr = 1.0f + (RATIO_OUT_RIGHT - 1.0f) * ramp;
+        float rr = 1.0f + (RATIO_IN_RIGHT - 1.0f) * ramp;
         leftSp = (uint8_t)(baseSpeed * lr);
         rightSp = (uint8_t)(baseSpeed * rr);
     }
