@@ -67,18 +67,18 @@
 
 // P 增益：误差 1.0 → 偏转 KP_GAIN 度
 //   【震荡/蛇形】→ 调小；【反应迟钝/压线出弯】→ 调大
-#define KP_GAIN 45.0f
+#define KP_GAIN 55.0f
 
 // D 增益：抑制震荡，抵抗高速超调（当前设为0，需要时调大）
 //   【高速时蛇形震荡】→ 逐步调大（建议从 5 开始，每次 +5）
 //   【反应变迟钝】→ 调小或清0
-#define KD_GAIN 10.0f
+#define KD_GAIN 17.0f
 
 // 死区：黑度小于此值视为白底噪声
 //   【直道也左右晃】→ 调大；【弯道反应慢/光线暗断线→误转直行】→ 调小
-#define DEADBAND 110
-#define ERROR_DEADBAND 0.30f  // 误差死区，|error|<此值视为直行，抑制出弯震荡
-#define ANGLE_RATE_LIMIT 3.5f // 每帧最多偏转 8°，抑制高速抖动
+#define DEADBAND 100
+#define ERROR_DEADBAND 0.20f  // 误差死区，|error|<此值视为直行，抑制出弯震荡
+#define ANGLE_RATE_LIMIT 3.0f // 每帧最多偏转 8°，抑制高速抖动
 
 // 丢线保持状态机（3态 latch：LEFT/MIDDLE/RIGHT）
 // 读数 < 700 视为黑线（黑度 > LATCH_THRESHOLD），
@@ -92,16 +92,16 @@
 // ============================================================
 // ★【速度参数】只改 SPEED_BASE 即可全局调速
 // ============================================================
-#define SPEED_BASE 200 // 基础直行速度 ← ★比赛主调项
+#define SPEED_BASE 210 // 基础直行速度 ← ★比赛主调项
 #define SPEED_LOW 100  // 直道考核速度（独立）
 
 // 转弯差速（非对称：左弯40cm温和，右弯28cm激进）
 //   【弯道内侧轮打滑/推头】→ 调大 RATIO_OUT_*（外侧更猛）
 //   【弯道转不过来】→ 调小 RATIO_IN_*（内侧再慢）
-#define RATIO_IN_LEFT 0.85f   // 左弯内侧（40cm理论速比1.41）
-#define RATIO_OUT_LEFT 1.20f  // 左弯外侧
-#define RATIO_IN_RIGHT 0.85f  // 右弯内侧（28cm理论速比1.64）
-#define RATIO_OUT_RIGHT 1.20f // 右弯外侧
+#define RATIO_IN_LEFT 0.87f   // 左弯内侧（40cm理论速比1.41）
+#define RATIO_OUT_LEFT 1.13f  // 左弯外侧
+#define RATIO_IN_RIGHT 0.87f  // 右弯内侧（28cm理论速比1.64）
+#define RATIO_OUT_RIGHT 1.13f // 右弯外侧
 
 // 差速渐变：误差=0时差速=0，误差达 DIFF_RAMP 时满差速
 //   【直道出弯差速反复跳】→ 调大（差速更温和）；【弯道差速不够】→ 调小
