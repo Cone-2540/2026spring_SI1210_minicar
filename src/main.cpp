@@ -299,7 +299,14 @@ void modeTrack() {
     // 5. PD 控制 → 连续舵机角度
     // 误差死区：微小偏离视为直行，抑制出弯 S 形震荡
     if (absError < ERROR_DEADBAND) error = 0.0f;
-    float pTerm = KP_GAIN * error;
+
+    // 两段 P 增益：小误差用低增益防震荡，大误差用高增益转紧弯
+    float kp = KP_LOW;
+    if (absError > KP_SWITCH) {
+        float t = (absError - KP_SWITCH) / (2.0f - KP_SWITCH);
+        kp = KP_LOW + (KP_HIGH - KP_LOW) * t;
+    }
+    float pTerm = kp * error;
 
     // D 项（抑制震荡）
     static float prevError = 0.0f;
