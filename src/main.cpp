@@ -33,6 +33,7 @@ Servo steeringServo;
 Mode currentMode = MODE_DEBUG;
 
 int servoAngle = SERVO_CENTER;
+int straightServoAngle = STRAIGHT_CENTER; // 直道模式独立零位
 
 // 传感器
 const uint8_t sensorPins[SENSOR_NUM] = {PIN_L2, PIN_L1, PIN_M, PIN_R1, PIN_R2};
@@ -165,7 +166,7 @@ void setMode(Mode mode) {
             Serial.println("\n>>> DEBUG 模式");
             break;
         case MODE_STRAIGHT:
-            steeringServo.write(servoAngle);
+            steeringServo.write(straightServoAngle);
             pendingStart = true;
             startTimestamp = millis();
             Serial.print("\n>>> 直道考核  倒计时 ");
@@ -214,7 +215,7 @@ void modeStraight() {
         }
     }
     if (motorRunning) {
-        steeringServo.write(servoAngle);
+        steeringServo.write(straightServoAngle);
         setMotorSpeed(SPEED_LOW, SPEED_LOW);
     }
     delay(10);

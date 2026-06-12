@@ -41,6 +41,7 @@
 // 舵机参数
 // ============================================================
 #define SERVO_CENTER 92
+#define STRAIGHT_CENTER 92 // 直道考核模式独立舵机零位
 #define SERVO_MAX 180
 #define SERVO_MIN 4
 
@@ -49,17 +50,17 @@
 //   方法：DEBUG模式下发 'r' 看读数，记录纯白/纯黑下的值
 //   影响：巡线精度和方向判断
 // ============================================================
-#define WHITE_L2 940 // L2 白底读数
-#define WHITE_L1 960 // L1 白底读数
-#define WHITE_M 960  // M  白底读数
-#define WHITE_R1 960 // R1 白底读数
-#define WHITE_R2 960 // R2 白底读数
+#define WHITE_L2 960 // L2 白底读数
+#define WHITE_L1 980 // L1 白底读数
+#define WHITE_M 980  // M  白底读数
+#define WHITE_R1 980 // R1 白底读数
+#define WHITE_R2 980 // R2 白底读数
 
-#define BLACK_L2 210 // L2 黑线读数
-#define BLACK_L1 250 // L1 黑线读数
-#define BLACK_M 190  // M  黑线读数
-#define BLACK_R1 400 // R1 黑线读数（此路读数偏高）
-#define BLACK_R2 230 // R2 黑线读数
+#define BLACK_L2 230 // L2 黑线读数
+#define BLACK_L1 270 // L1 黑线读数
+#define BLACK_M 220  // M  黑线读数
+#define BLACK_R1 420 // R1 黑线读数（此路读数偏高）
+#define BLACK_R2 250 // R2 黑线读数
 
 // ============================================================
 // ★【主要调参区】PD 控制 & 死区
@@ -67,14 +68,14 @@
 
 // 两段 P 增益（小误差温和，大误差激进）
 //   【弯道入口过猛/震荡】→ 调小 KP_LOW；【紧弯转不过】→ 调大 KP_HIGH
-#define KP_LOW 40.0f   // 小误差区间的 P 增益 (|error| < KP_SWITCH)
-#define KP_HIGH 40.0f  // 大误差区间的 P 增益 (|error| ≥ KP_SWITCH)
+#define KP_LOW 37.0f   // 小误差区间的 P 增益 (|error| < KP_SWITCH)
+#define KP_HIGH 37.0f  // 大误差区间的 P 增益 (|error| ≥ KP_SWITCH)
 #define KP_SWITCH 0.8f // 误差阈值，超过此值启用高增益
 
 // D 增益：抑制震荡，抵抗高速超调（当前设为0，需要时调大）
 //   【高速时蛇形震荡】→ 逐步调大（建议从 5 开始，每次 +5）
 //   【反应变迟钝】→ 调小或清0
-#define KD_GAIN 16.0f
+#define KD_GAIN 15.0f
 
 // 死区：黑度小于此值视为白底噪声
 //   【直道也左右晃】→ 调大；【弯道反应慢/光线暗断线→误转直行】→ 调小
@@ -94,8 +95,8 @@
 // ============================================================
 // ★【速度参数】只改 SPEED_BASE 即可全局调速
 // ============================================================
-#define SPEED_BASE 200 // 基础直行速度 ← ★比赛主调项
-#define SPEED_LOW 100  // 直道考核速度（独立）
+#define SPEED_BASE 210 // 基础直行速度 ← ★比赛主调项
+#define SPEED_LOW 200  // 直道考核速度（独立）
 
 // 转弯差速（非对称：左弯40cm温和，右弯28cm激进）
 //   【弯道内侧轮打滑/推头】→ 调大 RATIO_OUT_*（外侧更猛）
